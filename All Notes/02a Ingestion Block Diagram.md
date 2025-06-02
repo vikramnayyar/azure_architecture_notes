@@ -1,3 +1,5 @@
+
+
 +----------------+        +-------------------+        +--------------------+        +------------------+
 |  Data Sources  |  -->   |  Azure Data Factory|  -->   |    Azure Synapse /   |  -->   |   Power BI / BI   |
 | (ADLS, SQL DB, |        |  (Ingestion +      |        |   Azure Databricks   |        |   Dashboards /    |
