@@ -129,10 +129,116 @@
             ⮕ Include error reason (e.g., "username too short", "invalid email")
         ``` 
 
+- 6 Azure Schema Files
+  - 6.1 Schema File Implmentation
+    - ADF --reads--> Source --compare_schema--> Schema File --types--> Config File | Azure SQL  | json
+      - Config File ----> json | yaml ----> simple, portable, outside Azure --used--> smaller projects --datasets_increase--> Unmanageable | NO Advanced Queries (like SQL on dbs) --also_lack--> Permissions
+    - Azure SQL Meta Data --adv--> Centralized | Complex Queries | Permissions --complex_working--> Db Skills | Harder Changes --only-- Azure
+    - JSON ----> INdustry Standard ----> 1. Detailed Schema  --for--> Heavy Data Sources --more_used--> Hiererchical Data (Non_tabular) 
+  
+    - JSON Schema Example
+    ```
+    import json
+    import logging
+    import azure.functions as func
+    from jsonschema import validate, ValidationError, FormatChecker
+    
+    # Define your JSON schema with "format": "email"
+    schema = {
+        "type": "object",
+        "properties": {
+            "email": {
+                "type": "string",
+                "format": "email"
+            },
+            "age": {
+                "type": "integer",
+                "minimum": 18,
+                "maximum": 99
+            }
+        },
+        "required": ["email", "age"]
+    }
+    
+    def main(req: func.HttpRequest) -> func.HttpResponse:
+        logging.info('Azure Function: JSON Schema validation triggered.')
+    
+        try:
+            data = req.get_json()
+        except ValueError:
+            return func.HttpResponse(
+                json.dumps({"status": "invalid", "error": "Invalid JSON"}),
+                status_code=400,
+                mimetype="application/json"
+            )
+    
+        try:
+            # Validate using jsonschema with FormatChecker enabled
+            validate(instance=data, schema=schema, format_checker=FormatChecker())
+            return func.HttpResponse(
+                json.dumps({"status": "valid"}),
+                status_code=200,
+                mimetype="application/json"
+            )
+        except ValidationError as e:
+            return func.HttpResponse(
+                json.dumps({"status": "invalid", "error": e.message}),
+                status_code=400,
+                mimetype="application/json"
+            )
+    ```
+   
+  - 6.2 All Inbuilt Formats in Azure (for Schema Validations)
+    | Format          | Description                           | Example                            |
+    | --------------- | ------------------------------------- | ---------------------------------- |
+    | `date-time`     | RFC 3339 date-time format             | `"2023-06-01T13:45:30Z"`           |
+    | `date`          | Full-date as per RFC 3339             | `"2023-06-01"`                     |
+    | `time`          | Time of day, RFC 3339                 | `"13:45:30Z"`                      |
+    | `email`         | Internet email address                | `"user@example.com"`               |
+    | `hostname`      | DNS hostname                          | `"example.com"`                    |
+    | `ipv4`          | IPv4 address                          | `"192.168.0.1"`                    |
+    | `ipv6`          | IPv6 address                          | `"2001:0db8:85a3::8a2e:0370:7334"` |
+    | `uri`           | Uniform Resource Identifier (URI)     | `"https://example.com"`            |
+    | `uri-reference` | URI or relative URI                   | `"/path/resource"`                 |
+    | `uri-template`  | URI template as per RFC 6570          | `"https://example.com/{id}"`       |
+    | `json-pointer`  | JSON Pointer (RFC 6901)               | `"/foo/bar/0"`                     |
+    | `regex`         | Regular expression pattern (ECMA 262) | `"^[A-Za-z0-9]+$"`                 |
+  
+  
+  
+    - 6.3 Schema Checks Possible in Azure (crossed ones cannot be declared in Schema File)
+  
+      | Validation Type           | Description                                     | Example / Usage                               | Supported in ADF?                                            |
+      |--------------------------|------------------------------------------------|-----------------------------------------------|--------------------------------------------------------------|
+      | **Type Check**            | Check data type (string, integer, boolean, etc.) | Define schema with `"type": "string"`         | ✅ Supported via dataset schema                               |
+      | **Required Fields**       | Ensure field presence                           | Specify `"required": ["fieldName"]`           | ✅ Supported in schema                                        |
+      | **Minimum / Maximum**     | Numeric minimum and maximum value               | `"minimum": 0`, `"maximum": 100`              | ✅ Supported in Mapping Data Flow expressions                 |
+      | **MinLength / MaxLength** | Minimum and maximum string length               | `"minLength": 5`, `"maxLength": 20`           | ❌ Not directly supported; can be implemented with expressions |
+      | **Pattern (Regex)**       | Validate string with regex pattern              | `"pattern": "^[a-zA-Z0-9]+$"`                 | ✅ Supported via `regexMatch()` in Data Flows                 |
+      | **Enum**                  | Allow only specific values                      | `"enum": ["active", "inactive"]`              | ❌ Not native, can implement via expression checks            |
+      | **Unique Items**          | Ensure array items are unique                   | `"uniqueItems": true`                          | ❌ Not supported                                              |
+      | **Format**                | Email, URI, date-time formats                   | `"format": "email"`                            | ❌ Not natively supported (use custom validation)             |
+      | **Nullability**           | Allow or disallow null values                   | `"nullable": true`                             | ✅ Supported with schema settings                             |
+      | **Length (Array)**        | Minimum or maximum number of items in array     | `"minItems": 1`, `"maxItems": 5`              | ❌ Not supported                                              |
+      | **Custom Validation**     | Business logic checks                           | Use Data Flow expressions, conditional splits | ✅ Fully supported via expressions                            |
+
+
+
+
+- 8. Layer 1 Development
+ 
+| Component                             | What You Do / Configure                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Purpose & Notes                                                                                                                                                                               |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1. Microsoft Purview**              | - **Register your data sources** (e.g., ADLS, SQL) to enable scanning <br> - Configure **scheduled scans** to discover schema and classify data <br> - Define **business glossary terms** (optional)                                                                                                                                                                                                                                                                                       | - Purview **does not validate incoming data** <br> - It **catalogs** schemas after data lands in raw layer or elsewhere <br> - Helps with data governance, classification, and lineage        |
+| **2. JSON Schema Inclusion**          | - Create a **JSON Schema file** (e.g., `schema.json`) with your rules: types, required fields, formats, min/max, etc. <br> - Store this schema file in a **secure accessible location** (Azure Blob Storage preferred) <br> - Keep the schema version-controlled and updated                                                                                                                                                                                                               | - This schema is your **source of truth** for data validation <br> - Enables strict validation beyond ADF’s built-in capabilities (like `"format": "email"`)                                  |
+| **3. Azure Data Factory (ADF) Setup** | - Define a **dataset schema** in ADF dataset definitions with basic types and required fields (simple validation) <br> - Build **data flows** or pipelines with expression validations (minLength, regex) for additional runtime checks <br> - Integrate **Azure Function activity** that fetches the JSON schema file and runs full validation (using JSONSchema lib) on incoming data <br> - Handle validation results (pass/fail), route invalid records (quarantine), and raise alerts | - ADF dataset schema supports basic validation only <br> - Complex validations are offloaded to Azure Functions or custom services <br> - ADF orchestrates ingestion and validation workflows |
+
+
+
 
 
      
-- Microsoft Purview
+- 7. Microsoft Purview
   - Microsoft Purview ----> 1. Cataloging    2. Data Governance
   - Schema Discovery --scans--> 1. ADLS 2.SQL 3.Synapse --extracts_structure--> Tables | Columns | Data Types etc
   - Data Classification ----> Financial Info | PII (Personally Identifiable Info like emails, names)
@@ -160,97 +266,6 @@
     +------------------------------------------------------------------------------------+
     ```
  
-- Azure Alerting
-  - ADF --reads--> Source --compare_schema--> Schema File --types--> Config File | 
-    - Config File ----> json | yaml ----> simple, portable, outside Azure --used--> smaller projects --datasets_increase--> Unmanageable | NO Advanced Queries (like SQL on dbs) --also_lack--> Permissions
-  - Azure SQL Meta Data --adv--> Centralized | Complex Queries | Permissions --complex_working--> Db Skills | Harder Changes --only-- Azure
-  - JSON ----> INdustry Standard ----> 1. Detailed Schema  --for--> Heavy Data Sources --more_used--> Hiererchical Data (Non_tabular) 
-
-  - JSON Schema Example
-  ```
-  import json
-  import logging
-  import azure.functions as func
-  from jsonschema import validate, ValidationError, FormatChecker
-  
-  # Define your JSON schema with "format": "email"
-  schema = {
-      "type": "object",
-      "properties": {
-          "email": {
-              "type": "string",
-              "format": "email"
-          },
-          "age": {
-              "type": "integer",
-              "minimum": 18,
-              "maximum": 99
-          }
-      },
-      "required": ["email", "age"]
-  }
-  
-  def main(req: func.HttpRequest) -> func.HttpResponse:
-      logging.info('Azure Function: JSON Schema validation triggered.')
-  
-      try:
-          data = req.get_json()
-      except ValueError:
-          return func.HttpResponse(
-              json.dumps({"status": "invalid", "error": "Invalid JSON"}),
-              status_code=400,
-              mimetype="application/json"
-          )
-  
-      try:
-          # Validate using jsonschema with FormatChecker enabled
-          validate(instance=data, schema=schema, format_checker=FormatChecker())
-          return func.HttpResponse(
-              json.dumps({"status": "valid"}),
-              status_code=200,
-              mimetype="application/json"
-          )
-      except ValidationError as e:
-          return func.HttpResponse(
-              json.dumps({"status": "invalid", "error": e.message}),
-              status_code=400,
-              mimetype="application/json"
-          )
-  ```
- 
-- All Inbuilt Formats in Azure (for Schema Validations)
-  | Format          | Description                           | Example                            |
-  | --------------- | ------------------------------------- | ---------------------------------- |
-  | `date-time`     | RFC 3339 date-time format             | `"2023-06-01T13:45:30Z"`           |
-  | `date`          | Full-date as per RFC 3339             | `"2023-06-01"`                     |
-  | `time`          | Time of day, RFC 3339                 | `"13:45:30Z"`                      |
-  | `email`         | Internet email address                | `"user@example.com"`               |
-  | `hostname`      | DNS hostname                          | `"example.com"`                    |
-  | `ipv4`          | IPv4 address                          | `"192.168.0.1"`                    |
-  | `ipv6`          | IPv6 address                          | `"2001:0db8:85a3::8a2e:0370:7334"` |
-  | `uri`           | Uniform Resource Identifier (URI)     | `"https://example.com"`            |
-  | `uri-reference` | URI or relative URI                   | `"/path/resource"`                 |
-  | `uri-template`  | URI template as per RFC 6570          | `"https://example.com/{id}"`       |
-  | `json-pointer`  | JSON Pointer (RFC 6901)               | `"/foo/bar/0"`                     |
-  | `regex`         | Regular expression pattern (ECMA 262) | `"^[A-Za-z0-9]+$"`                 |
-
-
-
-  - Schema Checks Possible in Azure (crossed ones cannot be declared in Schema File)
-
-    | Validation Type           | Description                                     | Example / Usage                               | Supported in ADF?                                            |
-    |--------------------------|------------------------------------------------|-----------------------------------------------|--------------------------------------------------------------|
-    | **Type Check**            | Check data type (string, integer, boolean, etc.) | Define schema with `"type": "string"`         | ✅ Supported via dataset schema                               |
-    | **Required Fields**       | Ensure field presence                           | Specify `"required": ["fieldName"]`           | ✅ Supported in schema                                        |
-    | **Minimum / Maximum**     | Numeric minimum and maximum value               | `"minimum": 0`, `"maximum": 100`              | ✅ Supported in Mapping Data Flow expressions                 |
-    | **MinLength / MaxLength** | Minimum and maximum string length               | `"minLength": 5`, `"maxLength": 20`           | ❌ Not directly supported; can be implemented with expressions |
-    | **Pattern (Regex)**       | Validate string with regex pattern              | `"pattern": "^[a-zA-Z0-9]+$"`                 | ✅ Supported via `regexMatch()` in Data Flows                 |
-    | **Enum**                  | Allow only specific values                      | `"enum": ["active", "inactive"]`              | ❌ Not native, can implement via expression checks            |
-    | **Unique Items**          | Ensure array items are unique                   | `"uniqueItems": true`                          | ❌ Not supported                                              |
-    | **Format**                | Email, URI, date-time formats                   | `"format": "email"`                            | ❌ Not natively supported (use custom validation)             |
-    | **Nullability**           | Allow or disallow null values                   | `"nullable": true`                             | ✅ Supported with schema settings                             |
-    | **Length (Array)**        | Minimum or maximum number of items in array     | `"minItems": 1`, `"maxItems": 5`              | ❌ Not supported                                              |
-    | **Custom Validation**     | Business logic checks                           | Use Data Flow expressions, conditional splits | ✅ Fully supported via expressions                            |
 
      
 
