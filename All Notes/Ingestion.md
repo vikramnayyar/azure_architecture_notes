@@ -223,7 +223,7 @@
       | **Custom Validation**     | Business logic checks                           | Use Data Flow expressions, conditional splits | ✅ Fully supported via expressions                            |
 
 
-- 7 Microsoft Purview
+- 7 Microsoft Purview (only Governance etc Nothing Functional)
   - Microsoft Purview ----> 1. Cataloging    2. Data Governance
   - Schema Discovery --scans--> 1. ADLS 2.SQL 3.Synapse --extracts_structure--> Tables | Columns | Data Types etc
   - Data Classification ----> Financial Info | PII (Personally Identifiable Info like emails, names)
