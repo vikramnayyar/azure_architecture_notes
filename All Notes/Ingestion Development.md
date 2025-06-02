@@ -30,5 +30,15 @@
 
 - 2 Layer 2 Development
 
+| Step | Activity / Component                 | Description                                                                                 | Tools / Services                | Notes & Best Practices                                               |
+| ---- | ------------------------------------ | ------------------------------------------------------------------------------------------- | ------------------------------- | -------------------------------------------------------------------- |
+| 1    | Ingest Raw Data                      | Bring raw JSON data into ADF Data Flow from Raw Layer (blob/ADLS)                           | Azure Data Factory, ADLS/Blob   | Data may contain invalid values that passed basic JSON schema checks |
+| 2    | Perform Runtime Validations          | Use Data Flow expressions for additional checks: minLength, regex, enums, value ranges      | ADF Data Flow                   | Complement JSON schema; catch business rule violations early         |
+| 3    | Derived Columns for Validation Flags | Create columns (e.g., `isValid`, `errorReason`) that track each validation result           | ADF Data Flow Derived Column    | Helps separate good vs bad records                                   |
+| 4    | Conditional Split                    | Route valid records downstream, send invalid records to quarantine                          | ADF Data Flow Conditional Split | Avoid bad data pollution downstream                                  |
+| 5    | Quarantine Invalid Data Storage      | Write invalid data & metadata (e.g., errorReason) to quarantine container                   | Azure Blob Storage / ADLS       | Enables later review, reprocessing                                   |
+| 6    | Logging & Monitoring                 | Enable ADF Data Flow debug and pipeline logging                                             | ADF Monitoring + Azure Monitor  | Track validation failures and pipeline health                        |
+| 7    | Integration with Layer 3             | Pass valid data to next layer where strict schema + format validations happen (e.g., email) | ADF Pipelines + Azure Functions | Keeps Layer 2 lightweight, delegates complex checks                  |
+| 8    | Testing & Deployment                 | Test with varied data sets, publish pipelines and data flows                                | Azure DevOps / GitHub, ADF UI   | Ensure robust validation before production                           |
 
 
