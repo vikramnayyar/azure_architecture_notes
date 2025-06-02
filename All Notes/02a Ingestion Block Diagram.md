@@ -76,3 +76,14 @@ Block Diagram
 
 ```
 
+
+- Deequ vs Layer 2 & Layer 3
+
+| Data Size           | Best Tool             | Why                           |
+| ------------------- | --------------------- | ----------------------------- |
+| < 1M rows           | ADF / Azure Function  | Low latency, simpler jobs     |
+| 1M–50M rows         | ADF (simple) or Deequ | Depends on complexity         |
+| 50M+ rows or >10 GB | ✅ Deequ (Databricks)  | Parallelism, metric profiling |
+
+- Deequ requires 20-30s time to startup
+
