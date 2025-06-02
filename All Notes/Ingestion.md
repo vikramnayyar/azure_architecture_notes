@@ -4,7 +4,7 @@
     - Goal 1 --load--> Raw Data ----> ADLS
     - Goal 2 --def--> Schema --downstream--> ETL & DQ
 
-  - 2. Tools for Ingestion
+  - 2 Tools for Ingestion
        
       | Source Type                | Ingestion Tool                                                                      |
       | -------------------------- | ----------------------------------------------------------------------------------- |
@@ -13,7 +13,7 @@
       | Files (CSV, JSON, Parquet) | **ADF**, **AzCopy**, **ADF Mapping Data Flows**, or custom Spark jobs in Databricks |
 
  
-  - 3. ADLS Gen2 
+  - 3 ADLS Gen2 
     - Hier NameSpaces --enables--> Partitions
     - Databases --support--> 1. SQL    2. NoSQL
     - stores --data--> 1. Raw   2. Cleaned   3. Curated
@@ -80,7 +80,7 @@
       - CPG Firms ----> Weekly Syndicated Files -----> 3-10GB ----> 100k rows per SKU
      
 
-  - 5. Layers in Schema Validation
+  - 5 Layers in Schema Validation
     - Layers in Ingestions (3 Schema Validations Followed by Other DQ Validations) 
         ```
         [Layer 1] JSON or other Schema File – types, required, nullable
@@ -225,7 +225,7 @@
 
 
 
-- 8. Layer 1 Development
+- 7 Layer 1 Development
  
 | Component                             | What You Do / Configure                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Purpose & Notes                                                                                                                                                                               |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -238,7 +238,7 @@
 
 
      
-- 7. Microsoft Purview
+- 8 Microsoft Purview
   - Microsoft Purview ----> 1. Cataloging    2. Data Governance
   - Schema Discovery --scans--> 1. ADLS 2.SQL 3.Synapse --extracts_structure--> Tables | Columns | Data Types etc
   - Data Classification ----> Financial Info | PII (Personally Identifiable Info like emails, names)
