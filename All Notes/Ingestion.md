@@ -4,7 +4,8 @@
     - Goal 1 --load--> Raw Data ----> ADLS
     - Goal 2 --def--> Schema --downstream--> ETL & DQ
 
-  - 2. Tools for Ingestion 
+  - 2. Tools for Ingestion
+       
       | Source Type                | Ingestion Tool                                                                      |
       | -------------------------- | ----------------------------------------------------------------------------------- |
       | Databases (SQL, NoSQL)     | **Azure Data Factory (ADF)** copy activity                                          |
