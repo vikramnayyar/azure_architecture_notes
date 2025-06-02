@@ -30,6 +30,7 @@
 
 - 2 Layer 2 Development
   - 2.1 Layer 2 Main Parts
+  
   | Step | Description                 | Services / Tools Used                                    | What It Does                                                                                 | How It Gets Configured                                                                                                   |
   | ---- | --------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
   | 1    | Ingest Raw Data             | Azure Data Factory (ADF), Azure Blob Storage / ADLS Gen2 | Reads raw JSON data from storage into the data flow for validation                           | Create an ADF dataset pointing to raw data location. Use it as Source in Mapping Data Flow with schema defined/imported. |
